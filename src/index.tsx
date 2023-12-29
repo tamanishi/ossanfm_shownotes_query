@@ -35,7 +35,8 @@ app.get('/', async (c) => {
       like(episodes.link, `%${query}%`))).all()
 
   console.log(result)
-  return c.json(result)
+//   return c.json(result)
+  return c.render(<h1>Hello!</h1>)
 })
 
 export default app
