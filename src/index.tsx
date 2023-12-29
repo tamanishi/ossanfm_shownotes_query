@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { renderer } from './renderer'
 import { drizzle } from 'drizzle-orm/d1'
-import { sql, eq } from 'drizzle-orm'
+import { sql, or, eq, like } from 'drizzle-orm'
 import { episodes, shownotes } from './schema'
 
 type Bindings = {
@@ -13,6 +13,9 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.get('*', renderer)
 
 app.get('/', async (c) => {
+  const query = c.req.query().query ??= ''
+  console.log(`query : ${query}`)
+
   const db = drizzle(c.env.DB)
   const result = await db.select(
     {
@@ -24,9 +27,15 @@ app.get('/', async (c) => {
       s_title: sql<string>`${shownotes.title}`.as('s_title'),
       s_link: sql<string>`${shownotes.link}`.as('s_link'),
     }
-  ).from(episodes).innerJoin(shownotes, eq(episodes.id, shownotes.episodeId)).where(eq(episodes.id, 10)).all();
+  ).from(episodes).innerJoin(shownotes, eq(episodes.id, shownotes.episodeId))
+    .where(or(
+      like(shownotes.title, `%${query}%`),
+      like(episodes.title, `%${query}%`),
+      like(shownotes.link, `%${query}%`),
+      like(episodes.link, `%${query}%`))).all()
+
   console.log(result)
-  return c.render(<h1>Hello!</h1>)
+  return c.json(result)
 })
 
 export default app
