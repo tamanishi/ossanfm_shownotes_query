@@ -13,6 +13,8 @@ export const renderer = jsxRenderer(
       <html>
         <head>
           <link href="/static/style.css" rel="stylesheet" />
+          <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+          <script src="https://cdn.tailwindcss.com"></script>
           <title>{title}</title>
         </head>
         <body>{children}</body>

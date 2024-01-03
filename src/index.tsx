@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { renderer } from './renderer'
 import { drizzle } from 'drizzle-orm/d1'
-import { sql, or, eq, like } from 'drizzle-orm'
+import { union } from 'drizzle-orm/sqlite-core'
+import { sql, and, or, eq, not, notLike, like, desc } from 'drizzle-orm'
 import { episodes, shownotes } from './schema'
 
 type Bindings = {
@@ -12,31 +13,127 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 app.get('*', renderer)
 
-app.get('/', async (c) => {
-  const query = c.req.query().query ??= ''
-  console.log(`query : ${query}`)
+type Episode = {
+  title: string,
+  link: string,
+  pubDate: string,
+  shownotes: Shownote[]
+}
+
+type Shownote = {
+  title: string,
+  link: string
+}
+
+app.get('/', (c) => {
+  return c.render(<div class="container mx-10 my-auto">
+    <h1 class="text-xl">Ossan.fm Shownote Search</h1>
+    <input class="h-10 border-2 rounded-lg" type="search"
+      name="query" placeholder="Begin Typing To Search Epiosodes, Shownotes..."
+      hx-post="/search"
+      hx-trigger="input changed delay:800ms, search"
+      hx-target="#search-results" />
+
+    <div id="search-results"></div>
+  </div>, {
+    title: 'Ossan.fm Shownotes Search'
+  })
+})
+
+app.post('/search', async (c) => {
+  const body = await c.req.parseBody()
+  const query = body['query'] ??= ''
 
   const db = drizzle(c.env.DB)
-  const result = await db.select(
-    {
-      e_id: sql<number>`${episodes.id}`.as('e_id'),
-      e_title: sql<string>`${episodes.title}`.as('e_title'),
-      e_link: sql<string>`${episodes.link}`.as('e_link'),
-      e_pubDate: episodes.pubDate,
-      s_id: sql<number>`${shownotes.id}`.as('s_id'),
-      s_title: sql<string>`${shownotes.title}`.as('s_title'),
-      s_link: sql<string>`${shownotes.link}`.as('s_link'),
-    }
-  ).from(episodes).innerJoin(shownotes, eq(episodes.id, shownotes.episodeId))
-    .where(or(
-      like(shownotes.title, `%${query}%`),
-      like(episodes.title, `%${query}%`),
-      like(shownotes.link, `%${query}%`),
-      like(episodes.link, `%${query}%`))).all()
+  const result = await union(
+    db.selectDistinct(
+      {
+        e_id: sql<number>`${episodes.id}`.as('e_id'),
+        e_title: sql<string>`${episodes.title}`.as('e_title'),
+        e_link: sql<string>`${episodes.link}`.as('e_link'),
+        e_pubDate: episodes.pubDate,
+        s_id: sql<number>`${shownotes.id}`.as('s_id'),
+        s_title: sql<string>`${shownotes.title}`.as('s_title'),
+        s_link: sql<string>`${shownotes.link}`.as('s_link'),
+      }
+    ).from(episodes).leftJoin(shownotes, eq(episodes.id, shownotes.episodeId))
+      .where(or(
+        and(
+          notLike(episodes.title, `%${query}%`),
+          like(shownotes.title, `%${query}%`)),
+        and(
+          like(episodes.title, `%${query}%`),
+          like(shownotes.title, `%${query}%`)))),
+    db.selectDistinct(
+      {
+        e_id: sql<number>`${episodes.id}`.as('e_id'),
+        e_title: sql<string>`${episodes.title}`.as('e_title'),
+        e_link: sql<string>`${episodes.link}`.as('e_link'),
+        e_pubDate: episodes.pubDate,
+        s_id: sql<number>`null`.as('s_id'),
+        s_title: sql<string>`null`.as('s_title'),
+        s_link: sql<string>`null`.as('s_link'),
+      }
+    ).from(episodes).innerJoin(shownotes, eq(episodes.id, shownotes.episodeId))
+      .where(and(
+        like(episodes.title, `%${query}%`),
+        notLike(shownotes.title, `%${query}%`)))
+  )
+    .orderBy(desc(episodes.pubDate))
+    .all()
 
-  console.log(result)
-//   return c.json(result)
-  return c.render(<h1>Hello!</h1>)
+  let episodeMap = new Map<number, Episode>();
+  result.map(e => {
+    if (episodeMap.has(e.e_id)) {
+      if (e.s_id === null) {
+        // 親がセット済で自分に要素がなかったら入れない
+        return
+      } else {
+        // 親がセット済で自分に要素があったら入れる
+        let episode = episodeMap.get(e.e_id)
+        const shownote: Shownote = {
+          title: e.s_title,
+          link: e.s_link,
+        }
+        episode!.shownotes.push(shownote)
+        episodeMap.set(e.e_id, episode!)
+      }
+    } else {
+      // 親がなかったら自分を入れる(要素があってもなくても)
+      let episode: Episode = {
+        title: e.e_title,
+        link: e.e_link,
+        pubDate: e.e_pubDate,
+        shownotes: []
+      }
+      const shownote: Shownote = {
+        title: e.s_title,
+        link: e.s_link,
+      }
+      episode.shownotes.push(shownote)
+      episodeMap.set(e.e_id, episode)
+    }
+
+  })
+
+  return c.render(
+    <>{Array.from(episodeMap.values()).map(e => {
+      const regex = new RegExp(`${query}`, 'gi')
+      const marked_title = e.title.replace(regex, '<mark>$&</mark>')
+      return (
+        <>
+          <div class="my-3">
+          <h2 class="text-xl text-blue-400"><a class="hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></h2>
+          <ul class="list-inside list-disc">{e.shownotes.map(e => {
+            if (e.title === null) return
+            const marked_title = e.title.replace(regex, '<mark>$&</mark>')
+            return (<li class="whitespace-nowrap mx-3"><a class="inline-block text-blue-400 hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></li>)
+          })}</ul>
+          </div>
+        </>
+      )
+    })}</>
+  )
 })
 
 export default app
