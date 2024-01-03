@@ -1,10 +1,21 @@
 # Ossan.fm Shownotes Search
 
+Recreation of [https://rebuildshownotesfilter.tamanishi.net/](https://rebuildshownotesfilter.tamanishi.net/)
+
+## Built with
+
+- [Cloudflare D1](https://developers.cloudflare.com/d1/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [Hono](https://hono.dev/)
+- [</> htmx](https://htmx.org/)
+
+## Deployment
+
 ```txt
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ```txt
-npm run deploy
+bun run deploy
 ```
