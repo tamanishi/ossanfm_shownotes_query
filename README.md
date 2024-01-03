@@ -1,6 +1,7 @@
 # Ossan.fm Shownotes Search
 
-Recreation of [https://rebuildshownotesfilter.tamanishi.net/](https://rebuildshownotesfilter.tamanishi.net/)
+- [https://ossanfmshownotessearch.tamanishi.net/](https://ossanfmshownotessearch.tamanishi.net/)
+- Recreation of [https://rebuildshownotesfilter.tamanishi.net/](https://rebuildshownotesfilter.tamanishi.net/)
 
 ## Built with
 
