@@ -31,7 +31,7 @@ app.get('/', (c) => {
     <input class="h-10 border-2 rounded-lg" type="search"
       name="query" placeholder="Begin Typing To Search Epiosodes, Shownotes..."
       hx-post="/search"
-      hx-trigger="input changed delay:800ms, load"
+      hx-trigger="input changed delay:500ms, load"
       hx-target="#search-results" />
 
     <div id="search-results"></div>
