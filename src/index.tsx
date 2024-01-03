@@ -27,9 +27,9 @@ type Shownote = {
 
 app.get('/', (c) => {
   return c.render(<div class="container mx-10 my-auto">
-    <h1 class="text-xl">Ossan.fm Shownote Search</h1>
-    <input class="h-10 border-2 rounded-lg" type="search"
-      name="query" placeholder="Begin Typing To Search Epiosodes, Shownotes..."
+    <h1 class="my-4 text-4xl">Ossan.fm Shownote Search</h1>
+    <input class="pl-2 w-96 h-10 border-2 rounded-xl" type="search"
+      name="query" placeholder="Type To Search Epiosodes, Shownotes..."
       hx-post="/search"
       hx-trigger="input changed delay:500ms, load"
       hx-target="#search-results" />
