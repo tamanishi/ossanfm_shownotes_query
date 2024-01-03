@@ -127,7 +127,7 @@ app.post('/search', async (c) => {
           <ul class="list-inside list-disc">{e.shownotes.map(e => {
             if (e.title === null) return
             const marked_title = e.title.replace(regex, '<mark>$&</mark>')
-            return (<li class="whitespace-nowrap mx-3"><a class="inline-block text-blue-400 hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></li>)
+            return (<li class="whitespace-nowrap mx-3 marker:text-blue-400"><a class="inline-block text-blue-400 hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></li>)
           })}</ul>
           </div>
         </>
