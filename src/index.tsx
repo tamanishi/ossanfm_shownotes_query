@@ -119,14 +119,14 @@ app.post('/search', async (c) => {
   return c.render(
     <>{Array.from(episodeMap.values()).map(e => {
       const regex = new RegExp(`${query}`, 'gi')
-      const marked_title = e.title.replace(regex, '<mark>$&</mark>')
+      const marked_title = query === '' ? e.title : e.title.replace(regex, '<mark>$&</mark>')
       return (
         <>
           <div class="my-3">
           <h2 class="text-xl text-blue-400"><a class="hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></h2>
           <ul class="list-inside list-disc">{e.shownotes.map(e => {
             if (e.title === null) return
-            const marked_title = e.title.replace(regex, '<mark>$&</mark>')
+            const marked_title = query === '' ? e.title : e.title.replace(regex, '<mark>$&</mark>')
             return (<li class="whitespace-nowrap mx-3 marker:text-blue-400"><a class="inline-block text-blue-400 hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></li>)
           })}</ul>
           </div>
