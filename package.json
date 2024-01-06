@@ -7,8 +7,10 @@
     "deploy": "$npm_execpath run build && wrangler pages deploy dist"
   },
   "dependencies": {
+    "@types/luxon": "^3.4.0",
     "drizzle-orm": "^0.29.1",
-    "hono": "^3.11.8"
+    "hono": "^3.11.8",
+    "luxon": "^3.4.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",

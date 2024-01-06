@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { renderer } from './renderer'
 import { drizzle } from 'drizzle-orm/d1'
 import { union } from 'drizzle-orm/sqlite-core'
-import { sql, and, or, eq, not, notLike, like, desc } from 'drizzle-orm'
+import { sql, and, or, eq, notLike, like, desc } from 'drizzle-orm'
+import { DateTime } from 'luxon'
 import { episodes, shownotes } from './schema'
 
 type Bindings = {
@@ -120,10 +121,12 @@ app.post('/search', async (c) => {
     <>{Array.from(episodeMap.values()).map(e => {
       const regex = new RegExp(`${query}`, 'gi')
       const marked_title = query === '' ? e.title : e.title.replace(regex, '<mark>$&</mark>')
+      const pubDate = DateTime.fromISO(e.pubDate).toFormat('yyyy/LL/dd')
       return (
         <>
           <div class="my-3">
-          <h2 class="text-xl text-blue-400"><a class="hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></h2>
+          <h2 class="text-xl text-blue-400 inline-block"><a class="hover:underline" href={e.link} target='_blank'><div dangerouslySetInnerHTML={{ __html: marked_title }} /></a></h2>
+          <span class="ml-2 text-gray-400">({pubDate})</span>
           <ul class="list-inside list-disc">{e.shownotes.map(e => {
             if (e.title === null) return
             const marked_title = query === '' ? e.title : e.title.replace(regex, '<mark>$&</mark>')
